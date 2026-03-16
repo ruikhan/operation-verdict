@@ -1,0 +1,196 @@
+import django.contrib.auth.models
+import django.contrib.auth.validators
+import django.db.models.deletion
+import django.utils.timezone
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = [('auth', '0012_alter_user_first_name_max_length')]
+
+    operations = [
+        migrations.CreateModel(
+            name='Player',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('password', models.CharField(max_length=128, verbose_name='password')),
+                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                ('is_superuser', models.BooleanField(default=False)),
+                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()])),
+                ('first_name', models.CharField(blank=True, max_length=150)),
+                ('last_name', models.CharField(blank=True, max_length=150)),
+                ('email', models.EmailField(blank=True, max_length=254)),
+                ('is_staff', models.BooleanField(default=False)),
+                ('is_active', models.BooleanField(default=True)),
+                ('date_joined', models.DateTimeField(default=django.utils.timezone.now)),
+                ('age', models.PositiveSmallIntegerField(blank=True, null=True)),
+                ('sex', models.CharField(blank=True, choices=[('M','Male'),('F','Female'),('O','Other'),('N','Prefer not to say')], max_length=1)),
+                ('phone_number', models.CharField(blank=True, max_length=25)),
+                ('terms_accepted', models.BooleanField(default=False)),
+                ('terms_accepted_at', models.DateTimeField(blank=True, null=True)),
+                ('cinematic_viewed', models.BooleanField(default=False)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('groups', models.ManyToManyField(blank=True, related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
+                ('user_permissions', models.ManyToManyField(blank=True, related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+            ],
+            options={'verbose_name': 'user', 'verbose_name_plural': 'users', 'abstract': False},
+            managers=[('objects', django.contrib.auth.models.UserManager())],
+        ),
+        migrations.CreateModel(
+            name='VictimFile',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('file_id', models.CharField(max_length=10, unique=True)),
+                ('code_name', models.CharField(max_length=60)),
+                ('victim_age', models.PositiveSmallIntegerField()),
+                ('incident_year', models.PositiveSmallIntegerField()),
+                ('location', models.CharField(max_length=120)),
+                ('status', models.CharField(choices=[('pending','Testimony Pending'),('corroborated','Corroborated'),('sealed','Sealed — Classified'),('active','Witness Cooperation Active'),('cold','Cold — Needs Review'),('original','Original Complaint Filed'),('recanted','Testimony Recanted'),('high_confidence','High Confidence')], max_length=20)),
+                ('evidence_strength', models.PositiveSmallIntegerField()),
+                ('evidence_items', models.JSONField(default=list)),
+                ('unlock_tier', models.CharField(choices=[('1','Tier 1'),('2','Tier 2'),('3','Tier 3'),('4','Tier 4')], default='1', max_length=1)),
+                ('has_cipher', models.BooleanField(default=False)),
+                ('cipher_key', models.CharField(blank=True, max_length=200)),
+                ('cipher_solution', models.CharField(blank=True, max_length=200)),
+                ('is_corrupted', models.BooleanField(default=False)),
+                ('corruption_blocker', models.CharField(blank=True, max_length=100)),
+            ],
+            options={'ordering': ['unlock_tier', 'file_id']},
+        ),
+        migrations.CreateModel(
+            name='FileReview',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('reviewed_at', models.DateTimeField(auto_now_add=True)),
+                ('notes', models.TextField(blank=True)),
+                ('cipher_solved', models.BooleanField(default=False)),
+                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to=settings.AUTH_USER_MODEL)),
+                ('victim_file', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='api.victimfile')),
+            ],
+            options={'ordering': ['-reviewed_at'], 'unique_together': {('player', 'victim_file')}},
+        ),
+        migrations.AddField(model_name='victimfile', name='reviewed_by',
+            field=models.ManyToManyField(blank=True, related_name='reviewed_files', through='api.FileReview', to=settings.AUTH_USER_MODEL)),
+        migrations.CreateModel(
+            name='GameProgress',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('files_reviewed', models.PositiveSmallIntegerField(default=0)),
+                ('conviction_strength', models.FloatField(default=0.0)),
+                ('verdict_reached', models.BooleanField(default=False)),
+                ('verdict_reached_at', models.DateTimeField(blank=True, null=True)),
+                ('session_start', models.DateTimeField(blank=True, null=True)),
+                ('session_end', models.DateTimeField(blank=True, null=True)),
+                ('time_remaining_secs', models.IntegerField(default=7200)),
+                ('tips_read', models.PositiveSmallIntegerField(default=0)),
+                ('ciphers_solved', models.PositiveSmallIntegerField(default=0)),
+                ('corruption_overcome', models.PositiveSmallIntegerField(default=0)),
+                ('score', models.IntegerField(default=0)),
+                ('last_active', models.DateTimeField(auto_now=True)),
+                ('player', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='progress', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='LeaderboardEntry',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('score', models.IntegerField(default=0)),
+                ('conviction_pct', models.FloatField(default=0.0)),
+                ('completion_time', models.IntegerField(default=0)),
+                ('verdict_reached', models.BooleanField(default=False)),
+                ('rank', models.IntegerField(default=0)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('player', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='leaderboard', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['-score', 'completion_time']},
+        ),
+        migrations.CreateModel(
+            name='InterrogationSession',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('suspect', models.CharField(default='Jipri Eipstein', max_length=100)),
+                ('started_at', models.DateTimeField(auto_now_add=True)),
+                ('ended_at', models.DateTimeField(blank=True, null=True)),
+                ('is_active', models.BooleanField(default=True)),
+                ('clue_unlocked', models.BooleanField(default=False)),
+                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interrogations', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['-started_at']},
+        ),
+        migrations.CreateModel(
+            name='InterrogationMessage',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('role', models.CharField(choices=[('investigator','Investigator'),('suspect','Suspect')], max_length=15)),
+                ('content', models.TextField()),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='api.interrogationsession')),
+            ],
+            options={'ordering': ['created_at']},
+        ),
+        migrations.CreateModel(
+            name='AnonymousTip',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('title', models.CharField(max_length=120)),
+                ('content', models.TextField()),
+                ('category', models.CharField(choices=[('location','Location Intel'),('associate','Associate Info'),('financial','Financial Trail'),('witness','Witness Info'),('evidence','Evidence Pointer')], max_length=20)),
+                ('sender_alias', models.CharField(default='Anonymous', max_length=60)),
+                ('unlock_after_reviews', models.PositiveSmallIntegerField(default=0)),
+                ('linked_file', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tips', to='api.victimfile')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+            ],
+            options={'ordering': ['unlock_after_reviews', 'created_at']},
+        ),
+        migrations.CreateModel(
+            name='PlayerTipRead',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('read_at', models.DateTimeField(auto_now_add=True)),
+                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tips_read_set', to=settings.AUTH_USER_MODEL)),
+                ('tip', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.anonymoustip')),
+            ],
+            options={'unique_together': {('player', 'tip')}},
+        ),
+        migrations.CreateModel(
+            name='CorruptionEvent',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('title', models.CharField(max_length=120)),
+                ('description', models.TextField()),
+                ('severity', models.CharField(choices=[('low','Low'),('medium','Medium'),('high','High')], max_length=10)),
+                ('blocker_name', models.CharField(max_length=100)),
+                ('blocker_role', models.CharField(max_length=100)),
+                ('resolution', models.TextField()),
+                ('resolution_code', models.CharField(max_length=50)),
+                ('affected_file', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='corruption_events', to='api.victimfile')),
+                ('is_active', models.BooleanField(default=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='PlayerCorruptionResolved',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('resolved_at', models.DateTimeField(auto_now_add=True)),
+                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='resolved_corruptions', to=settings.AUTH_USER_MODEL)),
+                ('event', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.corruptionevent')),
+            ],
+            options={'unique_together': {('player', 'event')}},
+        ),
+        migrations.CreateModel(
+            name='TimelineEvent',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('year', models.IntegerField()),
+                ('month', models.IntegerField(blank=True, null=True)),
+                ('title', models.CharField(max_length=150)),
+                ('description', models.TextField()),
+                ('category', models.CharField(choices=[('ascent','Rise to Power'),('crime','Criminal Act'),('cover_up','Cover-Up'),('exposure','Exposure'),('legal','Legal Action')], max_length=20)),
+                ('is_locked', models.BooleanField(default=False)),
+                ('unlock_after_reviews', models.PositiveSmallIntegerField(default=0)),
+            ],
+            options={'ordering': ['year', 'month']},
+        ),
+    ]

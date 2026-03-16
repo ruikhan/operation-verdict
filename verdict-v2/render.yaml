@@ -1,0 +1,66 @@
+databases:
+  - name: operation-verdict-db
+    databaseName: operation_verdict
+    user: verdict_user
+    plan: free
+
+services:
+  # ── Django Backend ──────────────────────────────────────────────────────────
+  - type: web
+    name: operation-verdict-backend
+    plan: free
+    runtime: python
+    rootDir: backend
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    healthCheckPath: /api/auth/token/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings_prod
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: operation-verdict-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: operation-verdict-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://operation-verdict-frontend.onrender.com
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: ANTHROPIC_API_KEY
+        sync: false   # Set this manually in Render dashboard
+
+  # ── Vue.js Frontend ─────────────────────────────────────────────────────────
+  - type: web
+    name: operation-verdict-frontend
+    plan: free
+    runtime: static
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "./dist"
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /manifest.json
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://operation-verdict-backend.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://operation-verdict-backend.onrender.com

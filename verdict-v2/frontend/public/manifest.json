@@ -1,0 +1,28 @@
+{
+  "name": "Operation Verdict",
+  "short_name": "VERDICT",
+  "description": "A classified investigation game. Build the case. Deliver justice.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050508",
+  "theme_color": "#c9a227",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
