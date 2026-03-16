@@ -8,12 +8,12 @@ services:
   # ── Django Backend ──────────────────────────────────────────────────────────
   - type: web
     name: operation-verdict-backend
-    plan: free
+    plan: free                          # ✅ Valid — dynamic Python web service
     runtime: python
     rootDir: backend
     buildCommand: "./build.sh"
     startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
-    healthCheckPath: /api/auth/token/
+    healthCheckPath: /api/health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings_prod
@@ -30,12 +30,12 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.0"
       - key: ANTHROPIC_API_KEY
-        sync: false   # Set this manually in Render dashboard
+        sync: false
 
   # ── Vue.js Frontend ─────────────────────────────────────────────────────────
   - type: web
     name: operation-verdict-frontend
-    plan: free
+                                        # ✅ `plan` removed — static sites are always free
     runtime: static
     rootDir: frontend
     buildCommand: "npm install && npm run build"

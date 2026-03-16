@@ -81,6 +81,7 @@ export const useGameStore = defineStore('game', {
     },
 
     async sendMessage(sessionId, message) {
+      if (!sessionId) { console.error('sendMessage: sessionId is undefined'); return null }
       try {
         const { data } = await api.post(`/interrogation/${sessionId}/message/`, { message })
         this.interrogationMessages.push({ role: 'investigator', content: message, created_at: new Date().toISOString() })

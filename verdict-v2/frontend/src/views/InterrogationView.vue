@@ -135,7 +135,7 @@ async function sendMessage() {
   const msg = userMessage.value.trim()
   userMessage.value = ''
   thinking.value = true
-  const result = await game.sendMessage(session.value.id, msg)
+  const result = await game.sendMessage(session.value.session_id, msg)
   if (result?.clue_unlocked) clueUnlocked.value = true
   thinking.value = false
   await nextTick()
