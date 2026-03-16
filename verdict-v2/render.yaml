@@ -8,12 +8,12 @@ services:
   # ── Django Backend ──────────────────────────────────────────────────────────
   - type: web
     name: operation-verdict-backend
-    plan: free                          # ✅ Valid — dynamic Python web service
+    plan: free
     runtime: python
-    rootDir: backend
+    rootDir: verdict-v2/backend
     buildCommand: "./build.sh"
     startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
-    healthCheckPath: /api/health/
+    healthCheckPath: /api/auth/token/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings_prod
@@ -35,9 +35,9 @@ services:
   # ── Vue.js Frontend ─────────────────────────────────────────────────────────
   - type: web
     name: operation-verdict-frontend
-                                        # ✅ `plan` removed — static sites are always free
+    plan: free
     runtime: static
-    rootDir: frontend
+    rootDir: verdict-v2/frontend
     buildCommand: "npm install && npm run build"
     staticPublishPath: "./dist"
     pullRequestPreviewsEnabled: false

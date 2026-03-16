@@ -74,14 +74,16 @@ export const useGameStore = defineStore('game', {
     async startInterrogation(suspect = 'Jipri Eipstein') {
       try {
         const { data } = await api.post('/interrogation/start/', { suspect })
-        this.interrogationSession = data
+        // Normalize: ensure both .id and .session_id exist regardless of API response shape
+        const session = { ...data, id: data.id || data.session_id, session_id: data.session_id || data.id }
+        this.interrogationSession = session
         this.interrogationMessages = []
-        return data
+        return session
       } catch (e) { return null }
     },
 
     async sendMessage(sessionId, message) {
-      if (!sessionId) { console.error('sendMessage: sessionId is undefined'); return null }
+      if (!sessionId) { console.error('sendMessage: sessionId is undefined — session may not have started'); return null }
       try {
         const { data } = await api.post(`/interrogation/${sessionId}/message/`, { message })
         this.interrogationMessages.push({ role: 'investigator', content: message, created_at: new Date().toISOString() })

@@ -1,8 +1,5 @@
-const CACHE_NAME = 'operation-verdict-v2'
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-]
+const CACHE_NAME = 'operation-verdict-v3'
+const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -23,9 +20,16 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
 
-  // Always fetch API calls from network
+  // Only handle http/https — ignore chrome-extension and other schemes
+  if (!url.protocol.startsWith('http')) return
+
+  // Always network-first for API calls
   if (url.pathname.startsWith('/api/')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })))
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })
+      )
+    )
     return
   }
 
